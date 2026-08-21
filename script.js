@@ -8,7 +8,6 @@
 
   const bgArt = document.getElementById("bg-art");
   const coverImg = document.getElementById("cover-img");
-  const trackUser = document.getElementById("track-user");
   const trackTitle = document.getElementById("track-title");
   const trackPrompt = document.getElementById("track-prompt");
   const trackCount = document.getElementById("track-count");
@@ -31,6 +30,7 @@
   const picker = document.getElementById("picker");
   const pickerClose = document.getElementById("picker-close");
   const pickerGrid = document.getElementById("picker-grid");
+  const trackStrip = document.getElementById("track-strip");
 
   let tracks = [];
   let currentIndex = 0;
@@ -52,7 +52,6 @@
     coverImg.alt = t.title;
     bgArt.style.backgroundImage = `url("${encodeURI(t.image)}")`;
 
-    trackUser.textContent = `@${t.username}`;
     trackTitle.textContent = t.title;
     trackPrompt.textContent = t.prompt;
     trackCount.textContent = `${String(t.id).padStart(2, "0")} / ${tracks.length}`;
@@ -62,6 +61,7 @@
     timeTotal.textContent = "0:00";
 
     highlightCurrentInPicker();
+    highlightCurrentInStrip();
 
     if (autoplay) {
       player.play().catch(() => {});
@@ -132,7 +132,6 @@
           <span class="pick-num">${String(t.id).padStart(2, "0")}</span>
         </span>
         <span class="pick-title">${escapeHtml(t.title)}</span>
-        <span class="pick-user">@${escapeHtml(t.username)}</span>
       `;
       card.addEventListener("click", () => {
         loadTrack(i);
@@ -146,6 +145,32 @@
     pickerGrid.querySelectorAll(".pick-card").forEach((el) => {
       el.classList.toggle("is-current", Number(el.dataset.index) === currentIndex);
     });
+  }
+
+  function buildTrackStrip() {
+    trackStrip.innerHTML = "";
+    tracks.forEach((t, i) => {
+      const item = document.createElement("button");
+      item.type = "button";
+      item.className = "strip-item";
+      item.dataset.index = String(i);
+      item.setAttribute("aria-label", t.title);
+      item.innerHTML = `<img src="${encodeURI(t.image)}" alt="" loading="lazy">`;
+      item.addEventListener("click", () => loadTrack(i));
+      trackStrip.appendChild(item);
+    });
+  }
+
+  function highlightCurrentInStrip() {
+    let currentEl = null;
+    trackStrip.querySelectorAll(".strip-item").forEach((el) => {
+      const isCurrent = Number(el.dataset.index) === currentIndex;
+      el.classList.toggle("is-current", isCurrent);
+      if (isCurrent) currentEl = el;
+    });
+    if (currentEl) {
+      currentEl.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    }
   }
 
   function escapeHtml(str) {
@@ -174,6 +199,7 @@
     .then((data) => {
       tracks = data;
       buildPicker();
+      buildTrackStrip();
     })
     .catch((err) => {
       console.error("data.json の読み込みに失敗しました", err);
